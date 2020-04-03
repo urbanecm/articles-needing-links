@@ -18,8 +18,10 @@ import yaml
 from flask import redirect, request, jsonify, render_template, url_for, \
     make_response, flash
 from flask import Flask
+import click
 import requests
-from requests_oauthlib import OAuth1
+import math
+import toolforge
 from flask_jsonlocale import Locales
 from flask_mwoauth import MWOAuth
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -53,6 +55,7 @@ class Wiki(db.Model):
     featured_articles_category = db.Column(db.String(255))
     bytes_per_link_avg = db.Column(db.Integer)
     bytes_per_link_max = db.Column(db.Integer)
+    tolerance = db.Column(db.Integer)
     minimum_length = db.Column(db.Integer)
     articles = db.relationship('SuggestedArticle', backref='suggested_article', lazy=True)
 
@@ -192,9 +195,42 @@ def admin_wiki_metrics(id):
     flash(_('wiki-metrics-edited'), 'success')
     return redirect(url_for('admin_wiki_edit', id=id))
 
-@app.route('/test')
-def test():
-    return Wiki.query.all()[0].sitename
+def floor(x, decimals=0):
+    multiplier = 10 ** decimals
+    return math.floor(x * multiplier) / multiplier
+
+@app.cli.command('suggest-articles')
+@click.option('--wiki', required=True)
+@click.option('--limit', default=50)
+def suggest_articles(wiki, limit):
+    w = Wiki.query.filter_by(dbname=wiki).first()
+    conn = toolforge.connect(wiki)
+    with conn.cursor() as cur:
+        treshold = floor(w.bytes_per_link_avg, 2)
+        cur.execute(
+            '''select page_id, page_title, page_len/count(*) as bytes_per_link from pagelinks
+            join page on page_id=pl_from where page_len>%s and page_namespace=0
+            group by page_id having bytes_per_link>%s
+            limit %s;''' ,
+            (w.minimum_length, treshold, limit)
+        )
+        data = cur.fetchall()
+    for row in data:
+        bpl_min = w.bytes_per_link_avg
+        bpl_max = w.bytes_per_link_max + w.tolerance
+        if row[2] < bpl_min:
+            probability = 0
+        elif row[2] > bpl_max:
+            probability = 100
+        else:
+            probability = (row[2] - bpl_min)/bpl_max * 100
+        s = SuggestedArticle(
+            page_id=row[0],
+            bytes_per_link=row[2],
+            probability=probability
+        )
+        db.session.add(s)
+        db.session.commit()
 
 if __name__ == "__main__":
     app.run(threaded=True)
