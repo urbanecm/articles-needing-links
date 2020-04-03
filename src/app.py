@@ -75,6 +75,10 @@ class Wiki(db.Model):
                     return wiki
 
     @property
+    def root_url(self):
+        return "%s/w" % self.url
+
+    @property
     def url(self):
         if self.url_:
             return self.url_
@@ -95,6 +99,27 @@ class SuggestedArticle(db.Model):
     bytes_per_link = db.Column(db.Integer)
     probability = db.Column(db.Integer)
     wiki_id = db.Column(db.Integer, db.ForeignKey('wiki.id'), nullable=False)
+
+    @property
+    def wiki_root_url(self):
+        return Wiki.query.filter_by(id=self.wiki_id).first().root_url
+
+    @property
+    def page_title(self):
+        r = mwoauth.request({
+            "action": "query",
+            "format": "json",
+            "pageids": self.page_id
+        }, url=self.wiki_root_url)
+        return r['query']['pages'][str(self.page_id)]['title']
+
+    def as_json(self):
+        return {
+            "id": self.id,
+            "page_id": self.page_id,
+            "page_title": self.page_title,
+            "probability": self.probability
+        }
 
 mwoauth = MWOAuth(
     consumer_key=app.config.get('CONSUMER_KEY'),
@@ -144,7 +169,53 @@ def db_admin_permissions():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if request.args.get('wiki'):
+        w = Wiki.query.filter_by(dbname=request.args.get('wiki')).first()
+        return render_template('tool.html', wiki=w)
+    return render_template('index.html', wikis=Wiki.query.all())
+
+@app.route('/suggest-article.json')
+def suggest_article():
+    last_id = request.args.get('last_id', 0)
+    wiki = Wiki.query.filter_by(dbname=request.args.get('wiki')).first()
+    res = SuggestedArticle.query.filter(db.and_(
+        SuggestedArticle.id > last_id,
+        SuggestedArticle.wiki_id == wiki.id
+    )).order_by('id').first().as_json()
+    res['page_html'] = mwoauth.request({
+        "action": "parse",
+        "format": "json",
+        "pageid": res['page_id'],
+        "disableeditsection": 1,
+        "disabletoc": 1
+    }, url=wiki.root_url)['parse']['text']['*']
+    return jsonify(res)
+
+@app.route('/report-article/<int:page_id>/needs-more-links', methods=['POST'])
+def report_article_needs_more_links(page_id):
+    sa = SuggestedArticle.query.filter_by(page_id=page_id).first()
+    r = mwoauth.request({
+        "action": "query",
+        "format": "json",
+        "meta": "tokens"
+    }, url=sa.wiki_root_url)
+    print(r)
+    token = r['query']['tokens']['csrftoken']
+    r = mwoauth.request({
+        "action": "edit",
+        "prependtext": '{{wikifikovat}}\n',
+        "nocreate": 1,
+        "summary": "Přidání šablony {{wikifikovat}}",
+        "pageid": page_id,
+        "token": token
+    }, url=sa.wiki_root_url)
+    db.session.delete(sa)
+    db.session.commit()
+    return jsonify({
+        "status": "ok",
+        "page_id": page_id,
+        "mw_response": r
+    })
 
 @app.route('/admin')
 def admin_home():
