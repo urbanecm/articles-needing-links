@@ -53,6 +53,8 @@ class Wiki(db.Model):
     dbname = db.Column(db.String(255))
     url_ = db.Column(db.String(255))
     featured_articles_category = db.Column(db.String(255))
+    template = db.Column(db.String(255))
+    summary = db.Column(db.String(255))
     bytes_per_link_avg = db.Column(db.Integer)
     bytes_per_link_max = db.Column(db.Integer)
     tolerance = db.Column(db.Integer)
@@ -101,8 +103,12 @@ class SuggestedArticle(db.Model):
     wiki_id = db.Column(db.Integer, db.ForeignKey('wiki.id'), nullable=False)
 
     @property
+    def wiki(self):
+        return Wiki.query.filter_by(id=self.wiki_id).first()
+
+    @property
     def wiki_root_url(self):
-        return Wiki.query.filter_by(id=self.wiki_id).first().root_url
+        return self.wiki.root_url
 
     @property
     def page_title(self):
@@ -203,9 +209,9 @@ def report_article_needs_more_links(page_id):
     token = r['query']['tokens']['csrftoken']
     r = mwoauth.request({
         "action": "edit",
-        "prependtext": '{{wikifikovat}}\n',
+        "prependtext": '{{%s}}\n' % sa.wiki.template,
         "nocreate": 1,
-        "summary": "Přidání šablony {{wikifikovat}}",
+        "summary": sa.wiki.summary,
         "pageid": page_id,
         "token": token
     }, url=sa.wiki_root_url)
@@ -253,6 +259,8 @@ def admin_wiki_edit(id):
     if request.method == 'POST':
         w.featured_articles_category = request.form.get('featured-category')
         w.minimum_length = request.form.get('minimum-length')
+        w.template = request.form.get('template')
+        w.summary = request.form.get('summary')
         db.session.commit()
         return redirect(request.url)
     return render_template('admin/wiki.html', wiki=w)

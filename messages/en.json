@@ -20,5 +20,7 @@
     "wiki-metrics-edited": "Wiki metrics were edited",
     "wiki-settings": "Wiki settings",
     "minimum-length": "Minimum length of an article to be considered",
-    "select-wiki": "Select your wiki"
+    "select-wiki": "Select your wiki",
+    "template": "Template",
+    "summary": "Edit summary"
 }

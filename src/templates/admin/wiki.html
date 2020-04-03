@@ -13,6 +13,12 @@
         <label for="minimum-length">{{ _('minimum-length') }}</label>
         <input class="form-control" type="number" name="minimum-length" id="minimum-length" value="{{wiki.minimum_length}}">
 
+        <label for="template">{{ _('template') }}</label>
+        <input class="form-control" type="text" name="template" id="template" value="{{wiki.template}}">
+
+        <label for="template">{{ _('summary') }}</label>
+        <input class="form-control" type="text" name="summary" id="summary" value="{{wiki.summary}}">
+
         <input class="btn btn-primary form-control" type="submit" value="{{ _('submit') }}">
     </form>
 
