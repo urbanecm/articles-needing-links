@@ -227,7 +227,8 @@ def suggest_articles(wiki, limit):
         s = SuggestedArticle(
             page_id=row[0],
             bytes_per_link=row[2],
-            probability=probability
+            probability=probability,
+            wiki_id=w.id
         )
         db.session.add(s)
         db.session.commit()
