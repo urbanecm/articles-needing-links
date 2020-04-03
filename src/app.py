@@ -229,12 +229,10 @@ def admin_home():
 
 @app.route('/admin/wikis', methods=['GET', 'POST'])
 def admin_wikis():
-    sitematrix = mwoauth.request({
-        "action": "sitematrix",
-        "format": "json"
-    }).get('sitematrix', {})
-    if 'count' in sitematrix:
-        del sitematrix['count']
+    conn = toolforge.connect('meta')
+    with conn.cursor() as cur:
+        cur.execute('select * from wiki where is_closed=0')
+        matrix = cur.fetchall()
     if request.method == 'POST':
         wiki = Wiki(
             dbname=request.form.get('dbname'),
@@ -243,7 +241,7 @@ def admin_wikis():
         db.session.add(wiki)
         db.session.commit()
         return redirect(url_for('admin_wikis'))
-    return render_template('admin/wikis.html', wikis=Wiki.query.all(), sitematrix=sitematrix)
+    return render_template('admin/wikis.html', wikis=Wiki.query.all(), sitematrix=matrix)
 
 @app.route('/admin/wikis/<int:id>/delete', methods=['POST'])
 def admin_wiki_delete(id):

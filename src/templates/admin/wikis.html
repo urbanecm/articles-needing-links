@@ -32,10 +32,8 @@
     <form method="post">
         <label for="dbname">{{ _('dbname') }}</label>
         <select data-live-search="true" data-width="100%" class="selectpicker" name="dbname" id="dbname">
-            {% for language in sitematrix %}
-                {% for wiki in sitematrix[language]['site'] %}
-                    <option value="{{wiki['dbname']}}">{{wiki['sitename']}} ({{ wiki['dbname'] }})</option>
-                {% endfor %}
+            {% for wiki in matrix %}
+                <option value="{{wiki.0}}">{{wiki.2}} ({{wiki.0}})</option>
             {% endfor %}
         </select>
 
