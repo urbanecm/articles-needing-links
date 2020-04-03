@@ -53,6 +53,7 @@ class Wiki(db.Model):
     featured_articles_category = db.Column(db.String(255))
     bytes_per_link_avg = db.Column(db.Integer)
     bytes_per_link_max = db.Column(db.Integer)
+    minimum_length = db.Column(db.Integer)
     articles = db.relationship('SuggestedArticle', backref='suggested_article', lazy=True)
 
     def _get_sitematrix_match(self):
@@ -175,6 +176,7 @@ def admin_wiki_edit(id):
     w = Wiki.query.filter_by(id=id).first()
     if request.method == 'POST':
         w.featured_articles_category = request.form.get('featured-category')
+        w.minimum_length = request.form.get('minimum-length')
         db.session.commit()
         return redirect(request.url)
     return render_template('admin/wiki.html', wiki=w)

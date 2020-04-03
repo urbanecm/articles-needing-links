@@ -2,12 +2,16 @@
 {% block content %}
 <div class="container">
     <h1>{{ _('admin-wikis') }}: {{wiki.name}}</h1>
+    <h2>{{ _('wiki-settings') }}</h2>
     <form method="post">
         <label for="dbname">{{ _('dbname') }}</label>
         <input class="form-control" type="text" name="dbname" id="dbname" value="{{wiki.dbname}}" disabled>
 
         <label for="featured-category">Featured category</label>
         <input class="form-control" type="text" name="featured-category" id="featured-category" value="{{wiki.featured_articles_category}}">
+
+        <label for="minimum-length">{{ _('minimum-length') }}</label>
+        <input class="form-control" type="number" name="minimum-length" id="minimum-length" value="{{wiki.minimum_length}}">
 
         <input class="btn btn-primary form-control" type="submit" value="{{ _('submit') }}">
     </form>

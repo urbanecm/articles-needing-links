@@ -17,5 +17,7 @@
     "max-bytes-per-link": "Maximum number of bytes per link",
     "avg-bytes-per-link": "Average number of bytes per link",
     "calculate-metrics": "Calculate wiki metrics from the database",
-    "wiki-metrics-edited": "Wiki metrics were edited"
+    "wiki-metrics-edited": "Wiki metrics were edited",
+    "wiki-settings": "Wiki settings",
+    "minimum-length": "Minimum length of an article to be considered"
 }
