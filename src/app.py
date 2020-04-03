@@ -61,20 +61,12 @@ class Wiki(db.Model):
     minimum_length = db.Column(db.Integer)
     articles = db.relationship('SuggestedArticle', backref='suggested_article', lazy=True)
 
-    def _get_sitematrix_match(self):
-        if self._sitematrix:
-            return self._sitematrix
-        sitematrix = mwoauth.request({
-            "action": "sitematrix",
-            "format": "json"
-        }).get('sitematrix', {})
-        if 'count' in sitematrix:
-            del sitematrix['count']
-        for lang in sitematrix:
-            for wiki in sitematrix[lang]['site']:
-                if wiki['dbname'] == self.dbname:
-                    self._sitematrix = wiki
-                    return wiki
+    def _get_wiki_data(self):
+        return {
+            "sitename": self.dbname,
+            "dbname": self.dbname,
+            "url": None # TODO: Fix
+        }
 
     @property
     def root_url(self):
@@ -84,15 +76,14 @@ class Wiki(db.Model):
     def url(self):
         if self.url_:
             return self.url_
-        sm = self._get_sitematrix_match()
+        sm = self._get_wiki_data()
         self.url_ = sm['url']
         db.session.commit()
         return self.url_
     
     @property
     def name(self):
-        sm = self._get_sitematrix_match()
-        print(sm)
+        sm = self._get_wiki_data()
         return '%s (%s)' % (sm['sitename'], sm['dbname'])
 
 class SuggestedArticle(db.Model):
