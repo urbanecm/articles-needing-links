@@ -270,6 +270,7 @@ def admin_wiki_metrics(id):
     w = Wiki.query.filter_by(id=id).first()
     w.bytes_per_link_avg = request.form.get('avg-bytes-per-link')
     w.bytes_per_link_max = request.form.get('max-bytes-per-link')
+    w.tolerance = request.form.get('tolerance')
     db.session.commit()
     flash(_('wiki-metrics-edited'), 'success')
     return redirect(url_for('admin_wiki_edit', id=id))

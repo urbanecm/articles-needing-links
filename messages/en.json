@@ -22,5 +22,6 @@
     "minimum-length": "Minimum length of an article to be considered",
     "select-wiki": "Select your wiki",
     "template": "Template",
-    "summary": "Edit summary"
+    "summary": "Edit summary",
+    "tolerance": "Tolerance"
 }
