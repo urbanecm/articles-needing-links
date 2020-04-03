@@ -62,10 +62,21 @@ class Wiki(db.Model):
     articles = db.relationship('SuggestedArticle', backref='suggested_article', lazy=True)
 
     def _get_wiki_data(self):
+        try:
+            conn = toolforge.connect('meta')
+        except:
+            return {
+                "sitename": self.dbname,
+                "dbname": self.dbname,
+                "url": None # TODO: Fix
+            }
+        with conn.cursor() as cur:
+            cur.execute('select * from wiki where dbname=%s', (self.dbname, ))
+            data = cur.fetchall()[0]
         return {
-            "sitename": self.dbname,
-            "dbname": self.dbname,
-            "url": None # TODO: Fix
+            "sitename": data[2],
+            "url": data[3],
+            "dbname": data[0]
         }
 
     @property
